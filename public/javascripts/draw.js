@@ -4,55 +4,25 @@ CONSTRUCT UI ELEMENTS
 */
 var currentTool = ''
 
-
 var lineUi = new Path(new Point(50, 100), new Point(100, 50))
 lineUi.strokeWidth = 4
 lineUi.strokeColor = 'red'
-// lineUi.onClick = function(event) {
-// 	currentTool = 'line'
-// }
 
 var circleUi = new Path.Circle(new Point(80, 150), 30)
 
-// circleUi.onClick = function(event) {
-// 	console.log('clicked');
-// 	currentTool = 'circle'
-// }
-
-
 var rectUi = new Path.Rectangle( new Point(50, 200), new Size(60,60))
-
 
 // Create a group from the two paths:
 var uiGroup = new Group([lineUi, circleUi, rectUi]);
 
-
 // Set the stroke color of all items in the group:
 uiGroup.fillColor = 'red'
-
-
-
-//operate on each UI element
-// uiGroup.children.forEach(function(element) {
-// 	var bound = new Path.Rectangle(element.bounds)
-// 	bound.strokeColor = 'black'
-// 	bound.scale(1.2)
-// 	bound.strokeWidth = .2
-// })
 
 /*
 	CONSTRUCT MOUSE EVENTS
 */
 
-
-
-
-
 var myPath;
-
-function onClick(event) {
-
-}
 
 //listen to click event
 function onMouseDown(event) {
@@ -60,48 +30,45 @@ function onMouseDown(event) {
 
 	if(lineUi.bounds.contains(event.point)) {
 			currentTool = 'line'
-
-			//starting point of a new drawn line
-			myPath = new Path();
-			myPath.strokeColor = 'black';
+			linePath = new Path()
 	} else if (circleUi.bounds.contains(event.point)) {
 			currentTool = 'circle'
+ 	} else if (rectUi.bounds.contains(event.point)) {
+		console.log('clickkkk');
+			currentTool = 'rectangle'
 	}
-
-
 }
 
 function onMouseDrag(event) {
-	if(uiGroup.bounds.contains(event.point)) {
-			uiGroup.position += event.delta;
-		}
+	// if(uiGroup.bounds.contains(event.point)) {
+	// 		uiGroup.position += event.delta;
+	// }
 
-	if (currentTool === 'line' &&
-			!uiGroup.bounds.contains(event.point)) {
-		myPath.add(event.point);
+	if (currentTool === 'line' && !uiGroup.bounds.contains(event.point)) {
+		  linePath.add(event.point)
+			linePath.strokeColor = 'black'
 	}
 
-	// The radius is the distance between the position
-	// where the user clicked and the current position
-	// of the mouse.
 	if (currentTool === 'circle') {
-		var path = new Path.Circle(event.downPoint,
-														(event.downPoint - event.point).length)
+		var radius = (event.downPoint - event.point).length
+		var path = new Path.Circle(event.downPoint, radius)
 			path.fillColor = 'white'
 			path.strokeColor = 'black'
 			path.removeOnDrag()
-		}
+			console.log(event.point);
+	}
+
+	if (currentTool === 'rectangle') {
+			//figure out to do with native rect instead of circle
+			var radius = (event.downPoint - event.point).length
+			var path = new Path.Circle(event.downPoint, radius)
+			var rect = new Path.Rectangle(path.bounds)
+				rect.fillColor = 'white'
+				rect.strokeColor = 'black'
+				rect.removeOnDrag()
+	}
 }
 
-// function onMouseDrag(event) {
-// 	if(uiGroup.bounds.contains(event.point)) {
-// 		uiGroup.position += event.delta;
-// 	}
-//
-// 	var newLine = new Path
-//
-//
-// }
 
 
 
