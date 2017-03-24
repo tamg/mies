@@ -17,6 +17,8 @@ lineUi.strokeWidth = 4
 lineUi.strokeColor = 'red'
 
 var circleUi = new Path.Circle(new Point(80, 150), 30)
+var circle = new Path.Circle(view.center, 90)
+circle.strokeColor = 'red'
 
 var rectUi = new Path.Rectangle( new Point(50, 200), new Size(60,60))
 
@@ -45,6 +47,9 @@ function onMouseDown(event) {
 	}
 }
 
+
+var lastItem
+
 function onMouseDrag(event) {
 	// if(uiGroup.bounds.contains(event.point)) {
 	// 		uiGroup.position += event.delta;
@@ -58,12 +63,25 @@ function onMouseDrag(event) {
 			if (currentTool === 'circle') {
 				var radius = (event.downPoint - event.point).length
 				var nearestPoint = artBoard.getNearestPoint(event.point)
-				console.log(nearestPoint);
+				// console.log(nearestPoint);
 				var path = new Path.Circle(event.downPoint, radius)
+
+				var id = path.id
+					path.name = 'circle' + id
 
 					path.fillColor = 'white'
 					path.strokeColor = 'black'
+					lastItem = path
+
 					path.removeOnDrag()
+
+					path.onMouseDown = function(event) {
+							this.remove();
+					}
+
+
+
+
 
 			}
 
@@ -76,16 +94,28 @@ function onMouseDrag(event) {
 						rect.strokeColor = 'black'
 						rect.removeOnDrag()
 			}
+
+
 }
 }
+
 
 
 function onMouseUp(event) {
-	//clip out of artboard paths
-	var lastItem = project.activeLayer.lastChild
+
+
+	// clip out of artboard paths
+	if(lastItem && lastItem.isInside(artBoard)) {
+		console.log('inside circle')
+}
+
+
 	var bounds = new Path.Rectangle(artBoard.bounds)
-	console.log(lastItem);
-	if(bounds.contains(lastItem)) { console.log('intersects');}
+
+	// var intersections = bounds.getIntersections(lastItem)
+
+
+	// }
 
 }
 
@@ -93,8 +123,16 @@ function onFrame(event) {
 
 }
 
+// //clone path horizintally
+// for (var i = 0; i < 3; i++) {
+// 	var copy = path.clone();
+//
+// // Distribute the copies horizontally, so we can see them:
+// 	copy.position.x += i * copy.bounds.width;
+// }
 
-
+//fit something to a rectangular bounds
+// path.fitBounds(artBoard.bounds)
 
 
 // // display cordinates of an elemet
@@ -111,4 +149,19 @@ function onFrame(event) {
 // 		text.content = point.x + ' ' + point.y
 // 		text.fontSize = 7
 // 	})
+// }
+
+// Loop 30 times:
+// for (var i = 0; i < 30; i++) {
+//     // Create a circle shaped path at a random position
+//     // in the view:
+//     var path = new Path.Circle({
+//         center: Point.random() * view.size,
+//         radius: 25,
+//         fillColor: 'black',
+//         strokeColor: 'white'
+//     });
+//
+//     // When the mouse is pressed on the item, remove it:
+//
 // }
