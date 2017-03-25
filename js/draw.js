@@ -1,91 +1,69 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Mies</title>
-<link href="./stylesheets/style.css" rel="stylesheet" type="text/css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.10.3/paper-full.js"></script>
-</head>
-
-<body>
-<canvas resize id="draw"></canvas>
-<script type="text/paperscript" canvas="draw" async>
-// src="./js/draw.js"
 
 /*
 CONSTRUCT UI ELEMENTS
 */
-var currentTool = 'line'
-
-var lineUi = new Path.Line({
-	from: [50, 100],
-	to: [100, 50],
-	strokeWidth: 8,
-	strokeColor: 'black',
-	onMouseDown: function(event) {
-		currentTool = 'line'
-		console.log(currentTool);
-		linePath = new Path()
-	}
-})
-
-var circleUi = new Path.Circle({
-	center: [80, 150],
-	radius: 30,
-	onMouseDown: function(event) {
-		currentTool = 'circle'
-		console.log(currentTool);
-	}
-})
-
-var rectUi = new Path.Rectangle({
-	point: [50, 200],
-	size: [60,60],
-	onMouseDown: function(event) {
-		currentTool = 'rectangle'
-	}
-})
-
-// Create a UI group
-var uiGroup = new Group({
-	children: [lineUi, circleUi, rectUi],
-	fillColor: 'red'
-	//adjust group position based on artboards position
-})
-
+var currentTool = ''
 
 var artBoardSize = new Size (800, 600)
 var artBoardTopX = Math.max(180,(view.center.x - artBoardSize.width/2))
 var artBoardPoint = new Point (artBoardTopX, view.center.y - artBoardSize.height/2)
 
 var artBoard = new Path.Rectangle({
-	point: artBoardPoint,
-	size: artBoardSize,
-	strokeColor: '#cbcbcb',
-	strokeWidth: .5,
-	fillColor: 'ghostwhite',
-	name: 'artboard',
-	shadowColor: '#cbcbcb',
-	shadowBlur: 30,
-	shadowOffset: new Point(10, 10),
-	onMouseEnter: function(event) {
-		linePath = new Path()
-	},
-	onMouseDown: function(event) {
-
-	},
-	onMouseDrag: function(event) {
-	}
+  point: artBoardPoint,
+  size: artBoardSize,
+  strokeColor: 'grey',
+  fillColor: 'ghostwhite'
 })
 
-//CONSTRUCT MOUSE EVENTS
+var lineUi = new Path.Line({
+	from: [50, 100],
+	to: [100, 50],
+	strokeWidth: 4,
+	strokeColor: 'red'
+})
+
+var circleUi = new Path.Circle({
+	center: [80, 150],
+	radius: 30
+})
+
+var rectUi = new Path.Rectangle({
+	point: [50, 200],
+	size: [60,60]
+})
+
+// Create a group from the two paths:
+var uiGroup = new Group([lineUi, circleUi, rectUi]);
+
+// Set the stroke color of all items in the group:
+uiGroup.fillColor = 'red'
+
+/*
+	CONSTRUCT MOUSE EVENTS
+*/
+
+var myPath;
+
+//listen to click event
 function onMouseDown(event) {
 
+	if(lineUi.bounds.contains(event.point)) {
+			currentTool = 'line'
+			linePath = new Path()
+	} else if (circleUi.bounds.contains(event.point)) {
+			currentTool = 'circle'
+ 	} else if (rectUi.bounds.contains(event.point)) {
+			currentTool = 'rectangle'
+	}
 }
+
+
+var lastItem
 
 function onMouseDrag(event) {
 	// if(uiGroup.bounds.contains(event.point)) {
 	// 		uiGroup.position += event.delta;
-	// // }
+	// }
 	if (artBoard.bounds.contains(event.point)) {
 			if (currentTool === 'line') {
 				  linePath.add(event.point)
@@ -110,10 +88,15 @@ function onMouseDrag(event) {
 					path.onMouseDown = function(event) {
 							this.remove();
 					}
+
+
+
+
+
 			}
 
 			if (currentTool === 'rectangle') {
-					// figure out to do with native rect instead of circle
+					//figure out to do with native rect instead of circle
 					var radius = (event.downPoint - event.point).length
 					var path = new Path.Circle(event.downPoint, radius)
 					var rect = new Path.Rectangle(path.bounds)
@@ -121,9 +104,34 @@ function onMouseDrag(event) {
 						rect.strokeColor = 'black'
 						rect.removeOnDrag()
 			}
-}
-} //onMouseDrag
 
+
+}
+}
+
+
+
+function onMouseUp(event) {
+
+
+	// clip out of artboard paths
+	if(lastItem && lastItem.isInside(artBoard)) {
+		console.log('inside circle')
+}
+
+
+	var bounds = new Path.Rectangle(artBoard.bounds)
+
+	// var intersections = bounds.getIntersections(lastItem)
+
+
+	// }
+
+}
+
+function onFrame(event) {
+
+}
 
 // //clone path horizintally
 // for (var i = 0; i < 3; i++) {
@@ -167,7 +175,3 @@ function onMouseDrag(event) {
 //     // When the mouse is pressed on the item, remove it:
 //
 // }
-
-</script>
-</body>
-</html>
