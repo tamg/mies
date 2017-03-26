@@ -1,33 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Mies</title>
-<link href="./src/stylesheets/style.css" rel="stylesheet" type="text/css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.10.3/paper-full.js"></script>
-</head>
-
-<body>
-<canvas resize id="draw"></canvas>
-<script type="text/paperscript" canvas="draw" async>
-// src="./js/draw.js"
-
-/*
-CONSTRUCT UI ELEMENTS
-*/
 
 var currentTool = ''
-var myPath = new Path()
+
 
 window.draw = {
 		line: new Tool({
 				onMouseDown: function(event) {
 							path = new Path();
-							path.strokeColor = 'black'
-							path.add(event.point)
+							path.strokeColor = 'black';
+							path.add(event.point);
 					},
 				onMouseDrag: function(event) {
 					if(artBoard.bounds.contains(event.point)) {
-						path.add(event.point)
+						path.add(event.point);
 					}
 				}
 		}),
@@ -60,34 +44,15 @@ window.draw = {
 								rect.removeOnDrag()
 					}
 				}
-		}),
-
-		arc: new Tool({
-				onMouseDown: function(event) {
-
-				},
-				onMouseDrag: function(event) {
-					if(artBoard.bounds.contains(event.point)) {
-						myPath = new Path();
-						myPath.strokeColor = 'black';
-						myPath.add(event.downPoint);
-						myPath.arcTo(event.middlePoint, event.point);
-				    myPath.selected = true;
-						myPath.removeOnDrag()
-					}
-				},
-				onMouseUp: function(event) {
-					myPath.selected = false;
-					myPath.fillColor = 'black';
-				}
 		})
 }//drawing tools
+
 
 var lineUi = new Path.Line({
 	from: [50, 100],
 	to: [100, 50],
 	strokeWidth: 8,
-	strokeColor: 'red',
+	strokeColor: 'black',
 	onClick: function(event) {
 		currentTool = 'line'
 		draw.line.activate()
@@ -103,6 +68,16 @@ var circleUi = new Path.Circle({
 	}
 })
 
+project.importSVG('');
+
+var cloudUI = new Path({
+	center: [80, 150],
+	radius: 30,
+	onClick: function(event) {
+		currentTool = 'circle'
+		draw.circle.activate()
+	}
+})
 
 var rectUi = new Path.Rectangle({
 	point: [50, 200],
@@ -113,28 +88,13 @@ var rectUi = new Path.Rectangle({
 	}
 })
 
-var arcUi = new Path.Arc({
-	from: [50, 320],
-	through: [80, 280],
-	to: [110, 320],
-	strokeColor: 'red',
-	strokeWidth: 8,
-	onClick: function(event) {
-
-		currentTool = 'arc'
-		draw.arc.activate()
-		console.log(currentTool);
-	}
-})
-
-// var cloudUi = arcUi.clone()
-
 // Create a UI group
 var uiGroup = new Group({
 	children: [lineUi, circleUi, rectUi],
 	fillColor: 'red'
 	//adjust group position based on artboards position
 })
+
 
 var artBoardSize = new Size (800, 600)
 var artBoardTopX = Math.max(180,(view.center.x - artBoardSize.width/2))
@@ -160,6 +120,13 @@ var artBoard = new Path.Rectangle({
 	}
 })
 
+//CONSTRUCT MOUSE EVENTS
+function onMouseDown(event) {
+
+}
+
+
+
 // //clone path horizintally
 // for (var i = 0; i < 3; i++) {
 // 	var copy = path.clone();
@@ -170,6 +137,7 @@ var artBoard = new Path.Rectangle({
 
 //fit something to a rectangular bounds
 // path.fitBounds(artBoard.bounds)
+
 
 // // display cordinates of an elemet
 // function displayPoints(path) {
@@ -200,7 +168,3 @@ var artBoard = new Path.Rectangle({
 //
 //     // When the mouse is pressed on the item, remove it:
 //
-
-</script>
-</body>
-</html>
