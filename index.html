@@ -9,14 +9,13 @@
 <body>
 <canvas resize id="draw"></canvas>
 <script type="text/paperscript" canvas="draw" async>
-// src="./js/draw.js"
 
 /*
 CONSTRUCT UI ELEMENTS
 */
 
 var currentTool = ''
-var myPath = new Path()
+var myPath
 
 window.draw = {
 		line: new Tool({
@@ -64,14 +63,14 @@ window.draw = {
 
 		arc: new Tool({
 				onMouseDown: function(event) {
-
+					 	myPath = new Path() //arc tool
 				},
 				onMouseDrag: function(event) {
 					if(artBoard.bounds.contains(event.point)) {
 						myPath = new Path();
-						myPath.strokeColor = 'black';
-						myPath.add(event.downPoint);
-						myPath.arcTo(event.middlePoint, event.point);
+						myPath.strokeColor = 'black'
+						myPath.add(event.downPoint)
+						myPath.arcTo(event.middlePoint, event.point)
 				    myPath.selected = true;
 						myPath.removeOnDrag()
 					}
@@ -80,9 +79,27 @@ window.draw = {
 					myPath.selected = false;
 					myPath.fillColor = 'black';
 				}
+		}),
+
+		cloud: new Tool({
+				minDistance: 20,
+				onMouseDown: function(event) {
+					myPath = new Path()
+					myPath.strokeColor = 'black'
+					myPath.add(event.point)
+					console.log(myPath);
+				},
+				onMouseDrag: function(event) {
+					if(artBoard.bounds.contains(event.point)) {
+    					myPath.arcTo(event.point, true);
+					}
+				},
+				onMouseUp: function(event) {
+				}
 		})
 }//drawing tools
 
+//DRAW ALL UI ELEMENTS
 var lineUi = new Path.Line({
 	from: [50, 100],
 	to: [100, 50],
@@ -120,15 +137,23 @@ var arcUi = new Path.Arc({
 	strokeColor: 'red',
 	strokeWidth: 8,
 	onClick: function(event) {
-
-		currentTool = 'arc'
-		draw.arc.activate()
+		currentTool = 'cloud'
+		draw.cloud.activate()
 		console.log(currentTool);
 	}
 })
 
-// var cloudUi = arcUi.clone()
+var clone1 = arcUi.clone()
+clone1.scale(1,2)
+var clone2 = arcUi.clone()
+clone1.scale(1,2)
+var cloudUi = new Group({
+	children: [ clone1 ],
+	strokeColor: 'black',
+	position: [50, 320]
+})
 
+console.log(cloudUi);
 // Create a UI group
 var uiGroup = new Group({
 	children: [lineUi, circleUi, rectUi],
