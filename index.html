@@ -132,8 +132,7 @@ var uiGroup = new Group({
 
 uiGroup.position.y = artBoard.position.y
 
-var segment = null
-var path = null
+
 window.draw = {
 		line: new Tool({
 				onMouseDown: function(event) {
@@ -159,13 +158,13 @@ window.draw = {
 								fillColor: 'white',
 								strokeColor: 'black',
 						})
+						circle.removeOnDrag()
 						//clip paths out of bounds of artBoard
 						if (!artBoard.bounds.contains(circle.bounds)) {
 							var clipper = new Path.Rectangle(artBoard.bounds)
 							var group = new Group(clipper, circle)
 									group.clipped = true
 						}
-						path.removeOnDrag()
 					}
 				}
 		}),
@@ -236,6 +235,8 @@ window.draw = {
 				}
 		}),
 
+		//refactor for move tool to only operate when in artBoard
+		// and only on one item per tool selected to be operated on 
 		//from paperjs.org
 		move: new Tool({
 			onMouseDown: function(event) {
@@ -281,7 +282,7 @@ window.draw = {
 			},
 			onMouseDrag: function(event) {
 				if (segment &&
-						event.item.name !== 'artboard' &&
+						event.item !== artboard &&
 						artBoard.bounds.contains(event.point) &&
 						!uiGroup.bounds.contains(event.point)) {
 
