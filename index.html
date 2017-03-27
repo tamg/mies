@@ -48,6 +48,13 @@ var artBoard = new Path.Rectangle({
 
 
 //DRAW ALL UI ELEMENTS
+var infoUi = new PointText({
+		point: artBoardPoint - [0, 10],
+		fillColor: 'black',
+		fontSize: 14,
+		content: 'Click and Drag to draw a line'
+})
+
 var lineUi = new Path.Line({
 	from: [50, 100],
 	to: [100, 50],
@@ -56,6 +63,7 @@ var lineUi = new Path.Line({
 	onClick: function(event) {
 		currentTool = 'line'
 		draw.line.activate()
+		infoUi.content = 'Click and Drag to draw a ' + currentTool
 	}
 })
 
@@ -66,6 +74,7 @@ var circleUi = new Path.Circle({
 	onClick: function(event) {
 		currentTool = 'circle'
 		draw.circle.activate()
+		infoUi.content = 'Click and Drag to draw a ' + currentTool
 	}
 })
 
@@ -76,6 +85,7 @@ var rectUi = new Path.Rectangle({
 	onClick: function(event) {
 		currentTool = 'rectangle'
 		draw.rectangle.activate()
+		infoUi.content = 'Click and Drag to draw a ' + currentTool
 	}
 })
 
@@ -84,11 +94,11 @@ var arcUi = new Path.Arc({
 	through: [80, 290],
 	to: [110, 320],
 	strokeColor: 'red',
-	strokeWidth: 8,
+	strokeWidth: 7,
 	onClick: function(event) {
 		currentTool = 'arc'
 		draw.arc.activate()
-		console.log(currentTool);
+		infoUi.content = 'Click and Drag to draw an ' + currentTool
 	}
 })
 
@@ -96,23 +106,34 @@ var cloudUi = new Path({
 	segments:[[50, 370],[60, 350],[70, 370],[80, 350],
 						[90, 370],[100, 350],[110,370]],
 	strokeColor: 'red',
-	strokeWidth: 5,
+	strokeWidth: 8,
 	onClick: function(event) {
 		currentTool = 'cloud'
 		draw.cloud.activate()
-		console.log(currentTool);
+		infoUi.content = 'Click and Drag to draw a ' + currentTool
 	}
 })
 cloudUi.simplify()
 
+var moveUI = new Path({
+	segments:[[60, 420],[110, 400],[90, 450]],
+	fillColor: 'red',
+	onClick: function(event) {
+		currentTool = 'move'
+		draw.move.activate()
+		infoUi.content = 'Select and Drag to move an element or edit a point '
+	}
+})
 // Create a UI group
 var uiGroup = new Group({
-	children: [lineUi, circleUi, rectUi, arcUi, cloudUi],
+	children: [lineUi, circleUi, rectUi, arcUi, cloudUi, moveUI],
 	//adjust group position based on artboards position
 })
 
 uiGroup.position.y = artBoard.position.y
 
+var segment = null
+var path = null
 window.draw = {
 		line: new Tool({
 				onMouseDown: function(event) {
@@ -213,6 +234,79 @@ window.draw = {
 						}
 					}
 				}
+		}),
+
+		//from paperjs.org
+		move: new Tool({
+			onMouseDown: function(event) {
+				var hitOptions = {
+						segments: true,
+						stroke: true,
+						fill: true,
+						tolerance: 5
+				}
+				var hitResult = project.hitTest(event.point, hitOptions)
+				if (!hitResult)
+						return;
+
+				if (event.modifiers.shift) {
+						if (hitResult.type == 'segment') {
+								hitResult.segment.remove();
+						};
+						return;
+				}
+
+				if (hitResult) {
+						path = hitResult.item;
+						if (hitResult.type == 'segment') {
+								segment = hitResult.segment;
+						} else if (hitResult.type == 'stroke') {
+								var location = hitResult.location;
+								segment = path.insert(location.index + 1, event.point);
+								path.smooth();
+						}
+				}
+				// movePath = hitResult.type == 'fill';
+				// if (movePath)
+				// 		project.activeLayer.addChild(hitResult.item);
+			},
+			onMouseMove: function(event) {
+				project.activeLayer.selected = false
+				if (event.item &&
+						event.item.name !== 'artboard' &&
+						artBoard.bounds.contains(event.point)) {
+
+						event.item.selected = true
+					}
+			},
+			onMouseDrag: function(event) {
+				if (segment &&
+						event.item.name !== 'artboard' &&
+						artBoard.bounds.contains(event.point) &&
+						!uiGroup.bounds.contains(event.point)) {
+
+						segment.point += event.delta;
+						path.smooth();
+
+						if (!artBoard.bounds.contains(path.bounds)) {
+							var clipper = new Path.Rectangle(artBoard.bounds)
+							var group = new Group(clipper, path)
+									group.clipped = true
+						}
+				} else if (path  &&
+						event.item.name !== 'artboard' &&
+						artBoard.bounds.contains(event.point)&&
+						!uiGroup.bounds.contains(event.point)) {
+
+						path.position += event.delta;
+
+						if (!artBoard.bounds.contains(path.bounds)) {
+							var clipper = new Path.Rectangle(artBoard.bounds)
+							var group = new Group(clipper, path)
+									group.clipped = true
+						}
+				}
+			}
 		})
 }//drawing tools
 
