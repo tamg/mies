@@ -14,157 +14,18 @@
 CONSTRUCT UI ELEMENTS
 */
 
+
+//todo - move tool, color tool, delete tool
+//keboard events d for delete m for move c for color
+//tweet image button
 var currentTool = ''
 var myPath
-
-window.draw = {
-		line: new Tool({
-				onMouseDown: function(event) {
-							path = new Path();
-							path.strokeColor = 'black'
-							path.add(event.point)
-					},
-				onMouseDrag: function(event) {
-					if(artBoard.bounds.contains(event.point)) {
-						path.add(event.point)
-					}
-				}
-		}),
-
-		circle: new Tool({
-				onMouseDrag: function(event) {
-					if(artBoard.bounds.contains(event.point)) {
-						var radius = (event.downPoint - event.point).length
-						var path = new Path.Circle({
-								center: event.downPoint,
-								radius: radius,
-								name: 'circle' + this.id,
-								fillColor: 'white',
-								strokeColor: 'black',
-						})
-								path.removeOnDrag()
-					}
-				}
-		}),
-
-		rectangle: new Tool({
-				onMouseDrag: function(event) {
-					if(artBoard.bounds.contains(event.point)) {
-							// figure out to do with native rect instead of circle
-							var radius = (event.downPoint - event.point).length
-							var path = new Path.Circle(event.downPoint, radius)
-							var rect = new Path.Rectangle(path.bounds)
-								rect.fillColor = 'white'
-								rect.strokeColor = 'black'
-								rect.removeOnDrag()
-					}
-				}
-		}),
-
-		arc: new Tool({
-				onMouseDown: function(event) {
-					 	myPath = new Path() //arc tool
-				},
-				onMouseDrag: function(event) {
-					if(artBoard.bounds.contains(event.point)) {
-						myPath = new Path();
-						myPath.strokeColor = 'black'
-						myPath.add(event.downPoint)
-						myPath.arcTo(event.middlePoint, event.point)
-				    myPath.selected = true;
-						myPath.removeOnDrag()
-					}
-				},
-				onMouseUp: function(event) {
-					myPath.selected = false;
-					myPath.fillColor = 'black';
-				}
-		}),
-
-		cloud: new Tool({
-				minDistance: 20,
-				onMouseDown: function(event) {
-					myPath = new Path()
-					myPath.strokeColor = 'black'
-					myPath.add(event.point)
-					console.log(myPath);
-				},
-				onMouseDrag: function(event) {
-					if(artBoard.bounds.contains(event.point)) {
-    					myPath.arcTo(event.point, true);
-					}
-				},
-				onMouseUp: function(event) {
-				}
-		})
-}//drawing tools
-
-//DRAW ALL UI ELEMENTS
-var lineUi = new Path.Line({
-	from: [50, 100],
-	to: [100, 50],
-	strokeWidth: 8,
-	strokeColor: 'red',
-	onClick: function(event) {
-		currentTool = 'line'
-		draw.line.activate()
-	}
-})
-
-var circleUi = new Path.Circle({
-	center: [80, 150],
-	radius: 30,
-	onClick: function(event) {
-		currentTool = 'circle'
-		draw.circle.activate()
-	}
-})
-
-
-var rectUi = new Path.Rectangle({
-	point: [50, 200],
-	size: [60,60],
-	onClick: function(event) {
-		currentTool = 'rectangle'
-		draw.rectangle.activate()
-	}
-})
-
-var arcUi = new Path.Arc({
-	from: [50, 320],
-	through: [80, 280],
-	to: [110, 320],
-	strokeColor: 'red',
-	strokeWidth: 8,
-	onClick: function(event) {
-		currentTool = 'cloud'
-		draw.cloud.activate()
-		console.log(currentTool);
-	}
-})
-
-var clone1 = arcUi.clone()
-clone1.scale(1,2)
-var clone2 = arcUi.clone()
-clone1.scale(1,2)
-var cloudUi = new Group({
-	children: [ clone1 ],
-	strokeColor: 'black',
-	position: [50, 320]
-})
-
-console.log(cloudUi);
-// Create a UI group
-var uiGroup = new Group({
-	children: [lineUi, circleUi, rectUi],
-	fillColor: 'red'
-	//adjust group position based on artboards position
-})
 
 var artBoardSize = new Size (800, 600)
 var artBoardTopX = Math.max(180,(view.center.x - artBoardSize.width/2))
 var artBoardPoint = new Point (artBoardTopX, view.center.y - artBoardSize.height/2)
 
+//create an on resize view to modify position of
 var artBoard = new Path.Rectangle({
 	point: artBoardPoint,
 	size: artBoardSize,
@@ -184,6 +45,177 @@ var artBoard = new Path.Rectangle({
 	onMouseDrag: function(event) {
 	}
 })
+
+
+//DRAW ALL UI ELEMENTS
+var lineUi = new Path.Line({
+	from: [50, 100],
+	to: [100, 50],
+	strokeWidth: 8,
+	strokeColor: 'red',
+	onClick: function(event) {
+		currentTool = 'line'
+		draw.line.activate()
+	}
+})
+
+var circleUi = new Path.Circle({
+	center: [80, 150],
+	radius: 30,
+	fillColor: 'red',
+	onClick: function(event) {
+		currentTool = 'circle'
+		draw.circle.activate()
+	}
+})
+
+var rectUi = new Path.Rectangle({
+	point: [50, 200],
+	size: [60,60],
+	fillColor: 'red',
+	onClick: function(event) {
+		currentTool = 'rectangle'
+		draw.rectangle.activate()
+	}
+})
+
+var arcUi = new Path.Arc({
+	from: [50, 320],
+	through: [80, 290],
+	to: [110, 320],
+	strokeColor: 'red',
+	strokeWidth: 8,
+	onClick: function(event) {
+		currentTool = 'arc'
+		draw.arc.activate()
+		console.log(currentTool);
+	}
+})
+
+var cloudUi = new Path({
+	segments:[[50, 370],[60, 350],[70, 370],[80, 350],
+						[90, 370],[100, 350],[110,370]],
+	strokeColor: 'red',
+	strokeWidth: 5,
+	onClick: function(event) {
+		currentTool = 'cloud'
+		draw.cloud.activate()
+		console.log(currentTool);
+	}
+})
+cloudUi.simplify()
+
+// Create a UI group
+var uiGroup = new Group({
+	children: [lineUi, circleUi, rectUi, arcUi, cloudUi],
+	//adjust group position based on artboards position
+})
+
+uiGroup.position.y = artBoard.position.y
+
+window.draw = {
+		line: new Tool({
+				onMouseDown: function(event) {
+							path = new Path();
+							path.strokeColor = 'black'
+							path.add(event.point)
+					},
+				onMouseDrag: function(event) {
+					if(artBoard.bounds.contains(event.point)) {
+						path.add(event.point)
+					}
+				}
+		}),
+
+		circle: new Tool({
+				onMouseDrag: function(event) {
+					if(artBoard.bounds.contains(event.point)) {
+						var radius = (event.downPoint - event.point).length
+						var circle = new Path.Circle({
+								center: event.downPoint,
+								radius: radius,
+								name: 'circle' + this.id,
+								fillColor: 'white',
+								strokeColor: 'black',
+						})
+						//clip paths out of bounds of artBoard
+						if (!artBoard.bounds.contains(circle.bounds)) {
+							var clipper = new Path.Rectangle(artBoard.bounds)
+							var group = new Group(clipper, circle)
+									group.clipped = true
+						}
+						path.removeOnDrag()
+					}
+				}
+		}),
+
+		rectangle: new Tool({
+				onMouseDrag: function(event) {
+					if(artBoard.bounds.contains(event.point)) {
+							// figure out to do with native rect instead of circle
+							var radius = (event.downPoint - event.point).length
+							var circle = new Path.Circle(event.downPoint, radius)
+							var rect = new Path.Rectangle(circle.bounds)
+							rect.fillColor = 'white'
+							rect.strokeColor = 'black'
+							rect.removeOnDrag()
+
+							if (!artBoard.bounds.contains(rect.bounds)) {
+								var clipper = new Path.Rectangle(artBoard.bounds)
+								var group = new Group(clipper, rect)
+										group.clipped = true
+							}
+					}
+				}
+		}),
+
+		arc: new Tool({
+				onMouseDown: function(event) {
+					 	myPath = new Path() //arc tool
+				},
+				onMouseDrag: function(event) {
+					if(artBoard.bounds.contains(event.point)) {
+						myPath = new Path()
+						myPath.strokeColor = 'black'
+						myPath.add(event.downPoint)
+						myPath.arcTo(event.middlePoint, event.point)
+				    myPath.selected = true
+						myPath.removeOnDrag()
+
+						if (!artBoard.bounds.contains(myPath.bounds)) {
+							var clipper = new Path.Rectangle(artBoard.bounds)
+							var group = new Group(clipper, myPath)
+									group.clipped = true
+						}
+					}
+				},
+				onMouseUp: function(event) {
+					myPath.selected = false
+					// myPath.fillColor = 'black';
+				}
+		}),
+
+		cloud: new Tool({
+				minDistance: 20,
+				onMouseDown: function(event) {
+					myPath = new Path()
+					myPath.strokeColor = 'black'
+					myPath.add(event.point)
+				},
+				onMouseDrag: function(event) {
+					if(artBoard.bounds.contains(event.point)) {
+  					myPath.arcTo(event.point, true)
+
+						if (!artBoard.bounds.contains(myPath.bounds)) {
+							var clipper = new Path.Rectangle(artBoard.bounds)
+							var group = new Group(clipper, myPath)
+									group.clipped = true
+						}
+					}
+				}
+		})
+}//drawing tools
+
 
 // //clone path horizintally
 // for (var i = 0; i < 3; i++) {
