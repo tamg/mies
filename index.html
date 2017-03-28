@@ -46,12 +46,11 @@ var artBoard = new Path.Rectangle({
 	}
 })
 
-
 //DRAW ALL UI ELEMENTS
 var infoUi = new PointText({
 		point: artBoardPoint - [0, 10],
 		fillColor: 'black',
-		fontSize: 14,
+		fontSize: 16,
 		content: 'Click and Drag to draw a line'
 })
 
@@ -124,15 +123,92 @@ var moveUI = new Path({
 		infoUi.content = 'Select and Drag to move an element or edit a point '
 	}
 })
+
+var colorWheel = false
+var colorUi = new Path.Circle({
+	center: [80, 500],
+	radius: 30,
+	fillColor: 'red',
+	onClick: function(event) {
+		currentTool = 'color'
+		showColorUi()
+		draw.color.activate()
+		infoUi.content = 'Click to pick a color'
+	}
+})
+
+//from Paperjs.org examples
+function showColorUi() {
+	var steps = {
+			hue: 100,
+			saturation: 20,
+			lightness: 3
+	}
+
+	var colorGroup = new Group()
+
+	for (var i = 0; i < steps.lightness; i++) {
+			var radius = artBoard.size.width / steps.lightness * 0.40
+			var offset = new Point(artBoard.size.width / steps.lightness, 0)
+			var position = artBoard.bounds.leftCenter + offset * (i + 0.5)
+			var lightness = 1 - (i + 1) / (steps.lightness + 1)
+			createWheel(position, radius, steps, lightness)
+	}
+
+	function createWheel(center, radius, steps, lightness) {
+			var hUnit = 360 / steps.hue
+			for (var h = 0; h < steps.hue; h++) {
+					var hue = h * hUnit;
+					var vector = new Point({
+							angle: hue - 90,
+							length: radius
+					})
+					path = new Path(new Point(), vector.rotate(hUnit / 2))
+					path.closed = true
+					path.arcTo(vector, vector.rotate(hUnit / -2))
+					path.position += center
+					var colors = []
+					for (var i = 0; i < steps.saturation; i++) {
+							var saturation = i / steps.saturation
+							var color = { hue: hue, saturation: saturation, lightness: lightness }
+							colors.push(color)
+					}
+					var gradient = new Gradient(colors, true);
+					var from = center
+					var to = center + vector
+					var gradientColor = new Color(gradient, from, to)
+					path.fillColor = path.strokeColor = gradientColor
+					colorGroup.addChild(path)
+			}
+	}
+	var colorGroupRect = new Path.Rectangle(colorGroup.bounds)
+	colorGroupRect.strokeColor = 'red'
+	colorGroupRect.scale(1.04, 1.09)
+
+	var closeColorUi = new PointText({
+			point: colorGroupRect.bounds.topLeft - [0, 10],
+			fillColor: 'red',
+			fontSize: 16,
+			content: 'Close Color Wheel [X]',
+			onClick: function(event) {
+				colorGroupRect.remove()
+				colorGroup.removeChildren()
+				this.remove()
+			}
+	})
+
+}
+
+
 // Create a UI group
 var uiGroup = new Group({
-	children: [lineUi, circleUi, rectUi, arcUi, cloudUi, moveUI],
+	children: [lineUi, circleUi, rectUi, arcUi, cloudUi, moveUI, colorUi],
 	//adjust group position based on artboards position
 })
 
 uiGroup.position.y = artBoard.position.y
 
-
+//DRAWING AND EDITING TOOLS
 window.draw = {
 		line: new Tool({
 				onMouseDown: function(event) {
@@ -211,7 +287,6 @@ window.draw = {
 				},
 				onMouseUp: function(event) {
 					myPath.selected = false
-					// myPath.fillColor = 'black';
 				}
 		}),
 
@@ -235,37 +310,21 @@ window.draw = {
 				}
 		}),
 
-		//refactor for move tool to only operate when in artBoard
-		// and only on one item per tool selected to be operated on 
-		//from paperjs.org
 		move: new Tool({
 			onMouseDown: function(event) {
 				var hitOptions = {
-						segments: true,
+						segments: false,
 						stroke: true,
 						fill: true,
 						tolerance: 5
 				}
-				var hitResult = project.hitTest(event.point, hitOptions)
-				if (!hitResult)
-						return;
 
-				if (event.modifiers.shift) {
-						if (hitResult.type == 'segment') {
-								hitResult.segment.remove();
-						};
-						return;
-				}
+				if (artBoard.bounds.contains(event.point)) {
+						var hitResult = project.hitTest(event.point, hitOptions)
+					}
 
-				if (hitResult) {
-						path = hitResult.item;
-						if (hitResult.type == 'segment') {
-								segment = hitResult.segment;
-						} else if (hitResult.type == 'stroke') {
-								var location = hitResult.location;
-								segment = path.insert(location.index + 1, event.point);
-								path.smooth();
-						}
+				if (hitResult && hitResult.item !== artBoard) {
+						path = hitResult.item
 				}
 				// movePath = hitResult.type == 'fill';
 				// if (movePath)
@@ -274,32 +333,19 @@ window.draw = {
 			onMouseMove: function(event) {
 				project.activeLayer.selected = false
 				if (event.item &&
-						event.item.name !== 'artboard' &&
+						event.item !== artBoard &&
 						artBoard.bounds.contains(event.point)) {
 
 						event.item.selected = true
+
 					}
 			},
 			onMouseDrag: function(event) {
-				if (segment &&
-						event.item !== artboard &&
-						artBoard.bounds.contains(event.point) &&
-						!uiGroup.bounds.contains(event.point)) {
+				if (event.item &&
+						event.item !== artBoard &&
+						artBoard.bounds.contains(event.point)) {
 
-						segment.point += event.delta;
-						path.smooth();
-
-						if (!artBoard.bounds.contains(path.bounds)) {
-							var clipper = new Path.Rectangle(artBoard.bounds)
-							var group = new Group(clipper, path)
-									group.clipped = true
-						}
-				} else if (path  &&
-						event.item.name !== 'artboard' &&
-						artBoard.bounds.contains(event.point)&&
-						!uiGroup.bounds.contains(event.point)) {
-
-						path.position += event.delta;
+						path.position += event.delta
 
 						if (!artBoard.bounds.contains(path.bounds)) {
 							var clipper = new Path.Rectangle(artBoard.bounds)
@@ -308,9 +354,18 @@ window.draw = {
 						}
 				}
 			}
+		}),// Move tool
+
+		color: new Tool({
 		})
 }//drawing tools
 
+//handle view on a resize event
+// view.on('resize', function() {
+//
+// 		artBoard.fitBounds(this.bounds)
+// 		artBoard.scale(.7)
+// });
 
 // //clone path horizintally
 // for (var i = 0; i < 3; i++) {
