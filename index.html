@@ -3,7 +3,9 @@
 <head>
 <title>Mies</title>
 <link href="./src/stylesheets/style.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.2.7/assets/css/emojione.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.10.3/paper-full.js"></script>
+<script src="https://cdn.jsdelivr.net/emojione/2.2.7/lib/js/emojione.min.js"></script>
 </head>
 
 <body>
@@ -19,9 +21,11 @@
 /*
 CONSTRUCT PROJECT LAYERS
 */
+//the layer when most things are inside of
 var baseLayer = new Layer()
 baseLayer.name = 'baseLayer'
 
+//layer for the colorwheel
 var colorWheelLayer = new Layer()
 colorWheelLayer.name = 'colorWheelLayer'
 
@@ -35,7 +39,8 @@ CONSTRUCT UI ELEMENTS
 */
 
 
-var currentTool = ''
+var previousTool = ''
+var currentTool = 'line'
 var myPath
 
 var artBoardSize = new Size (800, 600)
@@ -53,15 +58,17 @@ var artBoard = new Path.Rectangle({
 	shadowColor: '#cbcbcb',
 	shadowBlur: 30,
 	shadowOffset: new Point(10, 10),
-	onMouseEnter: function(event) {
-
-	},
-	onMouseDown: function(event) {
-		//new line everytime we hit artboard
-	},
-	onMouseDrag: function(event) {
-	}
 })
+
+// function to check if an object is inside the bounds of an artBoard
+function checkIfBoardContains(object) {
+	if (!artBoard.bounds.contains(object.bounds)) {
+		var clipper = new Path.Rectangle(artBoard.bounds)
+		var group = new Group(clipper, object)
+				group.clipped = true
+				console.log('clipped');
+	}
+}
 
 //DRAW ALL UI ELEMENTS
 var infoUi = new PointText({
@@ -131,26 +138,42 @@ var cloudUi = new Path({
 })
 cloudUi.simplify()
 
-var moveUI = new Path({
-	segments:[[60, 420],[110, 400],[90, 450]],
+var textUi = new PointText({
+		point: [60, 450],
+		fillColor: 'red',
+		fontSize: 70,
+		fontFamily: 'Arial Bold',
+		content: 'T',
+		onClick: function(event) {
+			currentTool = 'text'
+			draw.text.activate()
+			infoUi.content = 'Click to insert text and type'
+		}
+})
+
+var transformUi = new Path({
+	segments:[[60, 490],[110, 470],[90, 520], [83, 497]],
 	fillColor: 'red',
 	onClick: function(event) {
-		currentTool = 'move'
-		draw.move.activate()
-		infoUi.content = 'Select and Drag to move an element or edit a point '
+		currentTool = 'transform'
+		draw.transform.activate()
+		infoUi.content = 'First select object.Then Mouse Drag to move. UP / DOWN Arrow to scale UP / DOWN'
 	}
 })
 
-var colorWheel = false
 var colorUi = new Path.Circle({
-	center: [80, 500],
+	center: [80, 570],
 	radius: 30,
 	fillColor: 'red',
+	strokeColor: 'black',
+	strokeWidth: 3,
 	onClick: function(event) {
 		tempColorDisplay = new Path.Rectangle(artBoard.bounds)
+		previousTool = currentTool
 		currentTool = 'color'
 		showColorUi()
 		draw.color.activate()
+		project.layers.colorWheelLayer.visible = true
 		infoUi.content = 'Click to pick a color'
 	}
 })
@@ -205,28 +228,33 @@ function showColorUi() {
 	//activate the base layer back after creating colorWheelLayer
 	baseLayer.activate()
 
-	var colorGroupRect = new Path.Rectangle(colorGroup.bounds)
-	colorGroupRect.strokeColor = 'red'
-	colorGroupRect.scale(1.04, 1.09)
-
-	var closeColorUi = new PointText({
-			point: colorGroupRect.bounds.topLeft - [0, 10],
-			fillColor: 'red',
-			fontSize: 16,
-			content: 'Close Color Wheel [X]',
-			onClick: function(event) {
-				colorGroupRect.remove()
-				colorGroup.removeChildren()
-				tempColorDisplay.remove()
-				this.remove()
-			}
-	})
+	// var colorGroupRect = new Path.Rectangle(colorGroup.bounds)
+	// colorGroupRect.strokeColor = 'red'
+	// colorGroupRect.scale(1.04, 1.09)
+	//
+	// var closeColorUi = new PointText({
+	// 		point: colorGroupRect.bounds.topLeft - [0, 10],
+	// 		fillColor: 'red',
+	// 		fontSize: 16,
+	// 		content: 'Close Color Wheel [X]',
+	// 		onClick: function(event) {
+	// 			//activate the tool that was active before picking color
+	// 			currentTool = previousTool
+	// 			draw[currentTool].activate()
+	//
+	// 			//close colorwheel ui
+	// 			colorGroupRect.remove()
+	// 			colorGroup.removeChildren()
+	// 			tempColorDisplay.remove()
+	// 			this.remove()
+	// 		}
+	// })
 }
 
 
 // Create a UI group
 var uiGroup = new Group({
-	children: [lineUi, circleUi, rectUi, arcUi, cloudUi, moveUI, colorUi],
+	children: [lineUi, circleUi, rectUi, arcUi, cloudUi, textUi, transformUi, colorUi],
 	//adjust group position based on artboards position
 })
 
@@ -259,12 +287,7 @@ window.draw = {
 								strokeColor: 'black',
 						})
 						circle.removeOnDrag()
-						//clip paths out of bounds of artBoard
-						if (!artBoard.bounds.contains(circle.bounds)) {
-							var clipper = new Path.Rectangle(artBoard.bounds)
-							var group = new Group(clipper, circle)
-									group.clipped = true
-						}
+						checkIfBoardContains(circle)
 					}
 				}
 		}),
@@ -280,11 +303,7 @@ window.draw = {
 							rect.strokeColor = 'black'
 							rect.removeOnDrag()
 
-							if (!artBoard.bounds.contains(rect.bounds)) {
-								var clipper = new Path.Rectangle(artBoard.bounds)
-								var group = new Group(clipper, rect)
-										group.clipped = true
-							}
+							checkIfBoardContains(rect)
 
 							circle.remove()
 					}
@@ -304,11 +323,7 @@ window.draw = {
 				    myPath.selected = true
 						myPath.removeOnDrag()
 
-						if (!artBoard.bounds.contains(myPath.bounds)) {
-							var clipper = new Path.Rectangle(artBoard.bounds)
-							var group = new Group(clipper, myPath)
-									group.clipped = true
-						}
+						checkIfBoardContains(myPath)
 					}
 				},
 				onMouseUp: function(event) {
@@ -327,16 +342,12 @@ window.draw = {
 					if(artBoard.bounds.contains(event.point)) {
   					myPath.arcTo(event.point, true)
 
-						if (!artBoard.bounds.contains(myPath.bounds)) {
-							var clipper = new Path.Rectangle(artBoard.bounds)
-							var group = new Group(clipper, myPath)
-									group.clipped = true
-						}
+						checkIfBoardContains(myPath)
 					}
 				}
 		}),
 
-		move: new Tool({
+		transform: new Tool({
 			onMouseDown: function(event) {
 				var hitOptions = {
 						segments: false,
@@ -347,14 +358,12 @@ window.draw = {
 
 				if (artBoard.bounds.contains(event.point)) {
 						var hitResult = project.hitTest(event.point, hitOptions)
-					}
+				}
 
 				if (hitResult && hitResult.item !== artBoard) {
 						path = hitResult.item
 				}
 				// movePath = hitResult.type == 'fill';
-				// if (movePath)
-				// 		project.activeLayer.addChild(hitResult.item);
 			},
 			onMouseMove: function(event) {
 				project.activeLayer.selected = false
@@ -373,14 +382,75 @@ window.draw = {
 
 						path.position += event.delta
 
-						if (!artBoard.bounds.contains(path.bounds)) {
-							var clipper = new Path.Rectangle(artBoard.bounds)
-							var group = new Group(clipper, path)
-									group.clipped = true
-						}
+						checkIfBoardContains(path)
+				}
+			},
+			onKeyDown: function(event) {
+				if(event.key === 'up') {
+					path.scale(1.2)
+					checkIfBoardContains(path)
+				} else if ( event.key === 'down') {
+					path.scale(0.9)
+					checkIfBoardContains(path)
 				}
 			}
 		}),// Move tool
+
+		text: new Tool({
+			onMouseDown: function(event) {
+
+				if(artBoard.bounds.contains(event.point)) {
+					var textPoint = event.downPoint
+
+					newText = new PointText({
+						point: textPoint,
+						fillColor: currentColor,
+						fontSize: 50,
+						fontFamily: 'Arial Bold',
+						content: ''
+					})
+
+					cursor = new Path.Line({
+						from: newText.bounds.bottomRight,
+						to: newText.bounds.topRight,
+						strokeWidth: 1,
+						strokeColor: 'red',
+					})
+
+					//fix
+					cursorBlink = setInterval(function(){
+						if(currentTool === 'text') {
+							cursor.visible = cursor.visible ? false : true
+						}
+					}, 500)
+				}
+
+			},//mousedown
+			onKeyDown: function(event) {
+
+					if (event.key === 'backspace') {
+						if(newText.content.length > 0) {
+							var tempTxt = newText.content
+							newText.content = tempTxt.substring(0, tempTxt.length - 1)
+							cursor.position.x = newText.bounds.bottomRight.x + 5
+						}
+					} else if (event.key === 'space') {
+							newText.content += ' '
+							cursor.position.x = newText.bounds.bottomRight.x + 5
+							checkIfBoardContains(newText)
+					} else if ( 'abcdefghijklmonpqrstuvwxyz0123456789-[]:?/,~!@#$%^&*()_+-'.indexOf(event.key) > 0) {
+							newText.content += event.key
+							cursor.position.x = newText.bounds.bottomRight.x + 5
+							checkIfBoardContains(newText)
+					} else if ( event.key === 'enter') {
+							clearInterval(cursorBlink)
+							cursor.remove()
+					}
+			}//mousedown
+
+		}),
+
+		//add delete tool with click and delete key
 
 		color: new Tool({
 			onMouseDown: function(event) {
@@ -390,13 +460,11 @@ window.draw = {
 						for(i=0; i<hitResult.length; i++) {
 							if(hitResult[i].item.layer.name === 'colorWheelLayer') {
 								currentColor = hitResult[i].item.fillColor
-									// console.log(currentColor)
+								colorUi.fillColor = currentColor
 							}
 						}
 
 					}
-
-
 			},
 			onMouseMove: function(event) {
 				if (artBoard.bounds.contains(event.point)) {
@@ -404,13 +472,21 @@ window.draw = {
 
 						for(i=0; i<hitResult.length; i++) {
 							if(hitResult[i].item.layer.name === 'colorWheelLayer') {
-								currentColor = hitResult[i].item.fillColor
+								var tempColor = hitResult[i].item.fillColor
 							}
 						}
 					}
 
-					tempColorDisplay.fillColor = currentColor
+					tempColorDisplay.fillColor = tempColor
 			},
+			onKeyDown: function(event) {
+			if(event.key === 'space')
+				//activate the tool that was active before picking color
+				currentTool = previousTool
+				draw[currentTool].activate()
+
+				project.layers.colorWheelLayer.visible = false
+			}
 		})
 }//drawing tools
 
@@ -462,6 +538,16 @@ window.draw = {
 //     // When the mouse is pressed on the item, remove it:
 //
 
+
+
+// var raster = new Raster({
+//     source: img.src,
+//     position: view.center
+// });
+
+
 </script>
+
+
 </body>
 </html>
