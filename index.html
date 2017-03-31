@@ -35,7 +35,8 @@ var colorWheelLayer = new Layer({
 //activate baseLayer
 baseLayer.activate()
 
-var currentColor = 'black'
+var currentColor = 'orange'
+var currentStrokeWidth = 3
 var tempColorDisplay
 
 var previousTool = ''
@@ -75,7 +76,7 @@ var ui = {
 	info: new PointText({
 		point: artBoardPoint - [0, 10],
 		fillColor: 'black',
-		fontSize: 16,
+		fontSize: 24,
 		content: 'Click and Drag to draw a line'
 	}),
 
@@ -157,7 +158,7 @@ var ui = {
 		onClick: function(event) {
 			currentTool = 'transform'
 			draw.transform.activate()
-			ui.info.content = 'First select object.Then Mouse Drag to move. UP / DOWN Arrow to scale UP / DOWN'
+			ui.info.content = 'Mouse Drag = move      Up / Down arrow = Scaling      Space = Delete'
 		}
 	}),
 
@@ -171,8 +172,12 @@ var ui = {
 			tempColorDisplay = new Path.Line({
 				from: artBoard.bounds.bottomLeft,
 				to: artBoard.bounds.bottomRight,
-				strokeWidth: 30
+				strokeWidth: 30,
+				onClick: function(event) {
+					showColorUi()
+				}
 			})
+			tempColorDisplay.position.y += 15
 			previousTool = currentTool
 			currentTool = 'color'
 			showColorUi()
@@ -186,7 +191,7 @@ var ui = {
 //add curvature to cloud ui
 ui.cloud.simplify()
 
-//modified from Paperjs.org examples
+// modified from Paperjs.org examples
 function showColorUi() {
 
 	colorWheelLayer.activate()
@@ -214,15 +219,21 @@ function showColorUi() {
 					length: radius
 			})
 
+			//saturation
+			for (var i = 0; i < steps.saturation; i++) {
+				var saturation = i / steps.saturation
+				var color = { hue: hue, saturation: saturation, lightness: lightness }
+			}
+
 			colorPath = new Path(new Point(), vector.rotate(hUnit / 2))
 			colorPath.closed = true
 			colorPath.arcTo(vector, vector.rotate(hUnit / -2))
 			colorPath.position += center
 
-			//saturation
-			for (var i = 0; i < steps.saturation; i++) {
-					var saturation = i / steps.saturation
-					var color = { hue: hue, saturation: saturation, lightness: lightness }
+			colorPath.onClick = function(event) {
+				currentTool = previousTool
+				draw[currentTool].activate()
+				project.layers.colorWheelLayer.visible = false
 			}
 
 			colorPath.fillColor = colorPath.strokeColor = color
@@ -251,6 +262,7 @@ window.draw = {
 							path = new Path();
 							path.strokeColor = currentColor
 							path.add(event.point)
+							path.strokeWidth = currentStrokeWidth
 					},
 				onMouseDrag: function(event) {
 					if(artBoard.bounds.contains(event.point)) {
@@ -302,6 +314,7 @@ window.draw = {
 					if(artBoard.bounds.contains(event.point)) {
 						myPath = new Path()
 						myPath.strokeColor = currentColor
+						myPath.strokeWidth = currentStrokeWidth,
 						myPath.add(event.downPoint)
 						myPath.arcTo(event.middlePoint, event.point)
 				    myPath.selected = true
@@ -320,6 +333,7 @@ window.draw = {
 				onMouseDown: function(event) {
 					myPath = new Path()
 					myPath.strokeColor = currentColor
+					myPath.strokeWidth = currentStrokeWidth,
 					myPath.add(event.point)
 				},
 				onMouseDrag: function(event) {
@@ -353,7 +367,8 @@ window.draw = {
 				project.activeLayer.selected = false
 				if (event.item &&
 						event.item !== artBoard &&
-						artBoard.bounds.contains(event.point)) {
+						event.item.layer.name !== 'colorWheelLayer' &&
+						artBoard.bounds.contains(event.point) ) {
 
 						event.item.selected = true
 
@@ -362,7 +377,8 @@ window.draw = {
 			onMouseDrag: function(event) {
 				if (event.item &&
 						event.item !== artBoard &&
-						artBoard.bounds.contains(event.point)) {
+						event.item.layer.name !== 'colorWheelLayer' &&
+						artBoard.bounds.contains(event.point) ) {
 
 						path.position += event.delta
 
@@ -376,6 +392,8 @@ window.draw = {
 				} else if ( event.key === 'down') {
 					path.scale(0.9)
 					checkIfBoardContains(path)
+				} else if ( event.key === 'space') {
+					path.remove()
 				}
 			}
 		}),// Move tool
@@ -389,7 +407,7 @@ window.draw = {
 					newText = new PointText({
 						point: textPoint,
 						fillColor: currentColor,
-						fontSize: 50,
+						fontSize: 60,
 						fontFamily: 'Arial Bold',
 						content: ''
 					})
