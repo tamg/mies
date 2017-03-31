@@ -17,37 +17,36 @@
 //todo - move tool, color tool, delete tool
 //keboard events d for delete m for move c for color
 //tweet image button
+//create an on resize view to modify position of
 
 /*
 CONSTRUCT PROJECT LAYERS
 */
-//the layer when most things are inside of
-var baseLayer = new Layer()
-baseLayer.name = 'baseLayer'
+//the layer where most things are inside of
+var baseLayer = new Layer({
+	name: 'baseLayer'
+})
 
-//layer for the colorwheel
-var colorWheelLayer = new Layer()
-colorWheelLayer.name = 'colorWheelLayer'
+//layer to hold the colorwheel tool
+var colorWheelLayer = new Layer({
+	name: 'colorWheelLayer'
+})
 
+//activate baseLayer
 baseLayer.activate()
 
 var currentColor = 'black'
 var tempColorDisplay
 
-/*
-CONSTRUCT UI ELEMENTS
-*/
-
-
 var previousTool = ''
 var currentTool = 'line'
 var myPath
 
+//draw our artboard based on browser window size (view)
 var artBoardSize = new Size (800, 600)
 var artBoardTopX = Math.max(180,(view.center.x - artBoardSize.width/2))
 var artBoardPoint = new Point (artBoardTopX, view.center.y - artBoardSize.height/2)
 
-//create an on resize view to modify position of
 var artBoard = new Path.Rectangle({
 	point: artBoardPoint,
 	size: artBoardSize,
@@ -60,85 +59,86 @@ var artBoard = new Path.Rectangle({
 	shadowOffset: new Point(10, 10),
 })
 
-// function to check if an object is inside the bounds of an artBoard
+// helper function to check/clip if a drawn object is inside the bounds of an artBoard
+// TODO: figure out layer index issue
 function checkIfBoardContains(object) {
 	if (!artBoard.bounds.contains(object.bounds)) {
 		var clipper = new Path.Rectangle(artBoard.bounds)
-		var group = new Group(clipper, object)
-				group.clipped = true
-				console.log('clipped');
+		var clippedGroup = new Group(clipper, object)
+				clippedGroup.clipped = true
 	}
 }
 
-//DRAW ALL UI ELEMENTS
-var infoUi = new PointText({
+//draw all the ui elements
+var ui = {
+
+	info: new PointText({
 		point: artBoardPoint - [0, 10],
 		fillColor: 'black',
 		fontSize: 16,
 		content: 'Click and Drag to draw a line'
-})
+	}),
 
-var lineUi = new Path.Line({
-	from: [50, 100],
-	to: [100, 50],
-	strokeWidth: 8,
-	strokeColor: 'red',
-	onClick: function(event) {
-		currentTool = 'line'
-		draw.line.activate()
-		infoUi.content = 'Click and Drag to draw a ' + currentTool
-	}
-})
+	line: new Path.Line({
+		from: [50, 100],
+		to: [100, 50],
+		strokeWidth: 8,
+		strokeColor: 'red',
+		onClick: function(event) {
+			currentTool = 'line'
+			draw.line.activate()
+			ui.info.content = 'Click and Drag to draw a ' + currentTool
+		}
+	}),
 
-var circleUi = new Path.Circle({
-	center: [80, 150],
-	radius: 30,
-	fillColor: 'red',
-	onClick: function(event) {
-		currentTool = 'circle'
-		draw.circle.activate()
-		infoUi.content = 'Click and Drag to draw a ' + currentTool
-	}
-})
+	circle: new Path.Circle({
+		center: [80, 150],
+		radius: 30,
+		fillColor: 'red',
+		onClick: function(event) {
+			currentTool = 'circle'
+			draw.circle.activate()
+			ui.info.content = 'Click and Drag to draw a ' + currentTool
+		}
+	}),
 
-var rectUi = new Path.Rectangle({
-	point: [50, 200],
-	size: [60,60],
-	fillColor: 'red',
-	onClick: function(event) {
-		currentTool = 'rectangle'
-		draw.rectangle.activate()
-		infoUi.content = 'Click and Drag to draw a ' + currentTool
-	}
-})
+	rect: new Path.Rectangle({
+		point: [50, 200],
+		size: [60,60],
+		fillColor: 'red',
+		onClick: function(event) {
+			currentTool = 'rectangle'
+			draw.rectangle.activate()
+			ui.info.content = 'Click and Drag to draw a ' + currentTool
+		}
+	}),
 
-var arcUi = new Path.Arc({
-	from: [50, 320],
-	through: [80, 290],
-	to: [110, 320],
-	strokeColor: 'red',
-	strokeWidth: 7,
-	onClick: function(event) {
-		currentTool = 'arc'
-		draw.arc.activate()
-		infoUi.content = 'Click and Drag to draw an ' + currentTool
-	}
-})
+	arc: new Path.Arc({
+		from: [50, 320],
+		through: [80, 290],
+		to: [110, 320],
+		strokeColor: 'red',
+		strokeWidth: 7,
+		onClick: function(event) {
+			currentTool = 'arc'
+			draw.arc.activate()
+			ui.info.content = 'Click and Drag to draw an ' + currentTool
+		}
+	}),
 
-var cloudUi = new Path({
-	segments:[[50, 370],[60, 350],[70, 370],[80, 350],
-						[90, 370],[100, 350],[110,370]],
-	strokeColor: 'red',
-	strokeWidth: 8,
-	onClick: function(event) {
-		currentTool = 'cloud'
-		draw.cloud.activate()
-		infoUi.content = 'Click and Drag to draw a ' + currentTool
-	}
-})
-cloudUi.simplify()
+	cloud: new Path({
+		segments:[[50, 370],[60, 350],[70, 370],[80, 350],
+		[90, 370],[100, 350],[110,370]],
+		strokeColor: 'red',
+		strokeWidth: 8,
+		onClick: function(event) {
+			currentTool = 'cloud'
+			draw.cloud.activate()
+			ui.info.content = 'Click and Drag to draw a ' + currentTool
+		}
+	}),
 
-var textUi = new PointText({
+	text: new PointText({
 		point: [60, 450],
 		fillColor: 'red',
 		fontSize: 70,
@@ -147,114 +147,98 @@ var textUi = new PointText({
 		onClick: function(event) {
 			currentTool = 'text'
 			draw.text.activate()
-			infoUi.content = 'Click to insert text and type'
+			ui.info.content = 'Click to insert text and type'
 		}
-})
+	}),
 
-var transformUi = new Path({
-	segments:[[60, 490],[110, 470],[90, 520], [83, 497]],
-	fillColor: 'red',
-	onClick: function(event) {
-		currentTool = 'transform'
-		draw.transform.activate()
-		infoUi.content = 'First select object.Then Mouse Drag to move. UP / DOWN Arrow to scale UP / DOWN'
-	}
-})
+	transform: new Path({
+		segments:[[60, 490],[110, 470],[90, 520], [83, 497]],
+		fillColor: 'red',
+		onClick: function(event) {
+			currentTool = 'transform'
+			draw.transform.activate()
+			ui.info.content = 'First select object.Then Mouse Drag to move. UP / DOWN Arrow to scale UP / DOWN'
+		}
+	}),
 
-var colorUi = new Path.Circle({
-	center: [80, 570],
-	radius: 30,
-	fillColor: 'red',
-	strokeColor: 'black',
-	strokeWidth: 3,
-	onClick: function(event) {
-		tempColorDisplay = new Path.Rectangle(artBoard.bounds)
-		previousTool = currentTool
-		currentTool = 'color'
-		showColorUi()
-		draw.color.activate()
-		project.layers.colorWheelLayer.visible = true
-		infoUi.content = 'Click to pick a color'
-	}
-})
+	color: new Path.Circle({
+		center: [80, 570],
+		radius: 30,
+		fillColor: 'red',
+		strokeColor: 'black',
+		strokeWidth: 2,
+		onClick: function(event) {
+			tempColorDisplay = new Path.Line({
+				from: artBoard.bounds.bottomLeft,
+				to: artBoard.bounds.bottomRight,
+				strokeWidth: 30
+			})
+			previousTool = currentTool
+			currentTool = 'color'
+			showColorUi()
+			draw.color.activate()
+			project.layers.colorWheelLayer.visible = true
+			ui.info.content = 'Click to pick a color'
+		}
+	})
+}//window.ui
 
-//from Paperjs.org examples
+//add curvature to cloud ui
+ui.cloud.simplify()
+
+//modified from Paperjs.org examples
 function showColorUi() {
+
 	colorWheelLayer.activate()
 	var steps = {
-			hue: 100,
-			saturation: 20,
+			hue: 24,
+			saturation: 5,
 			lightness: 3
 	}
 
 	var colorGroup = new Group()
 
-	for (var i = 0; i < steps.lightness; i++) {
-			var radius = artBoard.size.width / steps.lightness * 0.40
-			var offset = new Point(artBoard.size.width / steps.lightness, 0)
-			var position = artBoard.bounds.leftCenter + offset * (i + 0.5)
-			var lightness = 1 - (i + 1) / (steps.lightness + 1)
-			createWheel(position, radius, steps, lightness)
-	}
+	//lightness
+	for (var l = 0; l < steps.lightness; l++) {
+		var radius = artBoard.size.width / steps.lightness * 0.40
+		var offset = new Point(artBoard.size.width / steps.lightness, 0)
+		var center = artBoard.bounds.leftCenter + offset * (l + 0.5)
+		var lightness = 1 - (l + 1) / (steps.lightness + 1)
 
-	function createWheel(center, radius, steps, lightness) {
-			var hUnit = 360 / steps.hue
-			for (var h = 0; h < steps.hue; h++) {
-					var hue = h * hUnit;
-					var vector = new Point({
-							angle: hue - 90,
-							length: radius
-					})
-					path = new Path(new Point(), vector.rotate(hUnit / 2))
-					path.closed = true
-					path.arcTo(vector, vector.rotate(hUnit / -2))
-					path.position += center
-					var colors = []
-					for (var i = 0; i < steps.saturation; i++) {
-							var saturation = i / steps.saturation
-							var color = { hue: hue, saturation: saturation, lightness: lightness }
-							colors.push(color)
-					}
-					var gradient = new Gradient(colors, true);
-					var from = center
-					var to = center + vector
-					var gradientColor = new Color(gradient, from, to)
-					path.fillColor = path.strokeColor = gradientColor
-					path.name = 'path' + path.id
-					project.layers.colorWheelLayer.addChild(path)
-					colorGroup.addChild(path)
+		//hue
+		var hUnit = 360 / steps.hue
+		for (var h = 0; h < steps.hue; h++) {
+			var hue = h * hUnit;
+			var vector = new Point({
+					angle: hue - 90,
+					length: radius
+			})
+
+			colorPath = new Path(new Point(), vector.rotate(hUnit / 2))
+			colorPath.closed = true
+			colorPath.arcTo(vector, vector.rotate(hUnit / -2))
+			colorPath.position += center
+
+			//saturation
+			for (var i = 0; i < steps.saturation; i++) {
+					var saturation = i / steps.saturation
+					var color = { hue: hue, saturation: saturation, lightness: lightness }
 			}
-	}
+
+			colorPath.fillColor = colorPath.strokeColor = color
+			colorPath.name = 'colorPath' + colorPath.id
+			project.layers.colorWheelLayer.addChild(colorPath)
+			colorGroup.addChild(colorPath)
+		}
+
 	//activate the base layer back after creating colorWheelLayer
 	baseLayer.activate()
-
-	// var colorGroupRect = new Path.Rectangle(colorGroup.bounds)
-	// colorGroupRect.strokeColor = 'red'
-	// colorGroupRect.scale(1.04, 1.09)
-	//
-	// var closeColorUi = new PointText({
-	// 		point: colorGroupRect.bounds.topLeft - [0, 10],
-	// 		fillColor: 'red',
-	// 		fontSize: 16,
-	// 		content: 'Close Color Wheel [X]',
-	// 		onClick: function(event) {
-	// 			//activate the tool that was active before picking color
-	// 			currentTool = previousTool
-	// 			draw[currentTool].activate()
-	//
-	// 			//close colorwheel ui
-	// 			colorGroupRect.remove()
-	// 			colorGroup.removeChildren()
-	// 			tempColorDisplay.remove()
-	// 			this.remove()
-	// 		}
-	// })
 }
-
+}//showColorUi()
 
 // Create a UI group
 var uiGroup = new Group({
-	children: [lineUi, circleUi, rectUi, arcUi, cloudUi, textUi, transformUi, colorUi],
+	children: [ui.line, ui.circle, ui.rect, ui.arc, ui.cloud, ui.text, ui.transform, ui.color],
 	//adjust group position based on artboards position
 })
 
@@ -460,7 +444,7 @@ window.draw = {
 						for(i=0; i<hitResult.length; i++) {
 							if(hitResult[i].item.layer.name === 'colorWheelLayer') {
 								currentColor = hitResult[i].item.fillColor
-								colorUi.fillColor = currentColor
+								ui.color.fillColor = currentColor
 							}
 						}
 
@@ -477,7 +461,7 @@ window.draw = {
 						}
 					}
 
-					tempColorDisplay.fillColor = tempColor
+					tempColorDisplay.strokeColor = tempColor
 			},
 			onKeyDown: function(event) {
 			if(event.key === 'space')
