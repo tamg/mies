@@ -61,14 +61,50 @@ var ui = {
 	}),
 
 	line: new Path.Line({
-		from: [50, 100],
-		to: [100, 50],
+		from: [50, 10],
+		to: [100, -40],
 		strokeWidth: 8,
 		strokeColor: 'red',
 		onClick: function(event) {
 			currentTool = 'line'
 			draw.line.activate()
 			ui.info.content = 'Click and Drag to draw a ' + currentTool
+		}
+	}),
+
+	brush: new CompoundPath({
+    children: [
+				new Path.Line({
+					segments: [[80,25], [80,75]],
+				}),
+				new Path.Line({
+            segments: [[60,75], [100,75]],
+        }),
+				new Path.Line({
+				    segments: [[60, 75],[60, 90]],
+				}),
+				new Path.Line({
+						segments: [[70, 75],[70, 90]],
+				}),
+				new Path.Line({
+						segments: [[80, 75],[80, 90]],
+				}),
+				new Path.Line({
+						segments: [[90, 75],[90, 90]],
+				}),
+				new Path.Line({
+						segments: [[100, 75],[100, 90]],
+				}),
+    ],
+		strokeCap: 'round',
+		strokeJoin: 'round',
+		strokeWidth: 10,
+		strokeColor: 'red',
+		fillColor: 'white',
+		onClick: function(event) {
+			currentTool = 'brush'
+			draw.brush.activate()
+			ui.info.content = 'Click and Drag to paint with a ' + currentTool
 		}
 	}),
 
@@ -150,6 +186,7 @@ var ui = {
 		strokeWidth: 1.5,
 		onClick: function(event) {
 			previousTool = currentTool
+			previousUiInfo = ui.info.content
 			currentTool = 'color'
 			showColorUi()
 			draw.color.activate()
@@ -178,9 +215,11 @@ var ui = {
 		strokeWidth: 3,
 		fillColor: 'white',
 		onClick: function(event) {
-				var exportData = paper.project.exportSVG({ asString: true, bounds: artBoard });
-				var blob = new Blob([exportData], {type: "image/svg+xml;charset=" + document.characterSet});
-				saveAs(blob, 'fileNameNoExtension' +'.svg');
+				artBoard.visible = false
+				var svgData = paper.project.exportSVG({ asString: true, bounds: artBoard })
+				var blob = new Blob([svgData], {type: "image/svg+xml"})
+				saveAs(blob, 'Mies' +'.svg')
+				artBoard.visible = true
 		}
 	}),
 
@@ -191,6 +230,7 @@ var ui = {
 		strokeColor: currentColor,
 		onClick: function(event) {
 				previousTool = currentTool
+				previousUiInfo = ui.info.content
 				currentTool = 'color'
 				showColorUi()
 				draw.color.activate()
@@ -257,6 +297,7 @@ function showColorUi() {
 
 			colorPath.onClick = function(event) {
 				currentTool = previousTool
+				ui.info.content = previousUiInfo
 				draw[currentTool].activate()
 				project.layers.colorWheelLayer.visible = false
 			}
@@ -274,7 +315,7 @@ function showColorUi() {
 
 // Group all the UI stuff together
 var uiGroup = new Group({
-	children: [ui.line, ui.circle, ui.rect, ui.arc, ui.cloud,
+	children: [ui.line, ui.brush, ui.circle, ui.rect, ui.arc, ui.cloud,
 		 				 ui.text, ui.transform, ui.color, ui.download]
 	//adjust group position based on artboards position
 })
@@ -298,7 +339,7 @@ function checkIfBoardContains(object) {
 window.draw = {
 		line: new Tool({
 				onMouseDown: function(event) {
-							path = new Path();
+							path = new Path()
 							path.strokeColor = currentColor
 							path.add(event.point)
 							path.strokeWidth = currentStrokeWidth
@@ -308,6 +349,36 @@ window.draw = {
 						path.add(event.point)
 					}
 				}
+		}),
+
+		//modifed from paperJs examples
+		brush: new Tool({
+			minDistance: 10,
+			maxDistance: 45,
+
+			onMouseDown: function(event) {
+				path = new Path()
+				path.fillColor = currentColor
+				path.add(event.point)
+			},
+
+			onMouseDrag: function(event) {
+				var step = event.delta / 2
+				step.angle += 90
+
+				var top = event.middlePoint + step
+				var bottom = event.middlePoint - step
+
+				path.add(top)
+				path.insert(0, bottom)
+				path.smooth()
+			},
+
+			onMouseUp: function(event) {
+				path.add(event.point)
+				path.closed = true
+				path.smooth()
+			}
 		}),
 
 		circle: new Tool({
