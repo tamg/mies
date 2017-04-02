@@ -257,7 +257,7 @@ var ui = {
 		fontSize: 12,
 		content: 'Github Source [Created by @tamrrat at The Recurse Center]',
 		onClick: function(event) {
-			window.open('http://paperjs.org','_blank')
+			window.open('https://github.com/tamg/mies','_blank')
 		}
 	})
 
@@ -272,7 +272,7 @@ function showColorUi() {
 
 	colorWheelLayer.activate()
 	var steps = {
-			hue: 24,
+			hue: 36,
 			saturation: 5,
 			lightness: 3
 	}
@@ -417,18 +417,18 @@ window.draw = {
 		rectangle: new Tool({
 				onMouseDrag: function(event) {
 					if(artBoard.bounds.contains(event.point)) {
-							// figure out to do with native rect instead of circle
-							var radius = (event.downPoint - event.point).length
-							var circle = new Path.Circle(event.downPoint, radius)
-							var rect = new Path.Rectangle(circle.bounds)
+							var from = event.downPoint
+							var to = event.point
+							var rect = new Path.Rectangle({
+									from: from,
+									to: to,
+							})
 							rect.fillColor = currentColor
 							rect.strokeColor = 'black'
 							rect.name = 'rect' + rect.id
 							rect.removeOnDrag()
 
 							checkIfBoardContains(rect, rect.index)
-
-							circle.remove()
 					}
 				}
 		}),
@@ -630,7 +630,7 @@ window.draw = {
 
 function generateRandomDrawing() {
 
-	var iteration = 100
+	var iteration = 150
 
 	function randomPt() {
 		var bounds = new Size(artBoard.bounds.width, artBoard.bounds.height)
@@ -675,6 +675,7 @@ function generateRandomDrawing() {
 			center: center,
 			radius: radius,
 			fillColor: color,
+			blendMode: 'multiply'
 		})
 
 		checkIfBoardContains(path)
