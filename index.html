@@ -3,9 +3,7 @@
 <head>
 <title>Mies: Vector Editing Tool Using Paper.JS</title>
 <link href="./src/stylesheets/style.css" rel="stylesheet" type="text/css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.2.7/assets/css/emojione.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.10.3/paper-full.js"></script>
-<script src="https://cdn.jsdelivr.net/emojione/2.2.7/lib/js/emojione.min.js"></script>
 <script src="./src/js/FileSaver.min.js"></script>
 </head>
 
@@ -174,7 +172,7 @@ var ui = {
 		onClick: function(event) {
 			currentTool = 'transform'
 			draw.transform.activate()
-			ui.info.content = 'Mouse Drag = Move       Up / Down arrow = Scaling       Space = Delete'
+			ui.info.content = 'Mouse Drag = Move  Up/Down = Scale  Left/Right = Rotate  Space = Delete'
 		}
 	}),
 
@@ -191,24 +189,38 @@ var ui = {
 			showColorUi()
 			draw.color.activate()
 			project.layers.colorWheelLayer.visible = true
-			ui.info.content = 'Click to pick a color'
+			ui.info.content = 'Click to pick a color.   Space Bar to Exit'
 		}
+	}),
+
+	random: new Path.Star({
+	    center: [80, 650],
+	    points: 10,
+	    radius1: 25,
+	    radius2: 35,
+	    fillColor: 'red',
+			onClick: function(event) {
+				currentTool = 'random'
+				generateRandomDrawing()
+				draw.transform.activate()
+				ui.info.content = 'Randomly Generated Masterpiece'
+			}
 	}),
 
 	download: new CompoundPath({
     children: [
         new Path.Circle({
-            center: new Point(80, 650),
+            center: new Point(80, 730),
             radius: 30,
         }),
 				new Path.Line({
-            segments: [[65,660], [65,667], [95,667], [95,660]],
+            segments: [[65,740], [65,747], [95,747], [95,740]],
         }),
 				new Path.Line({
-            segments: [[70,650], [80,665], [90,650]],
+            segments: [[70,730], [80,745], [90,730]],
         }),
 				new Path.Line({
-						segments: [[80,630], [80,665]],
+						segments: [[80,710], [80,745]],
 				}),
     ],
 		strokeColor: 'red',
@@ -256,7 +268,6 @@ ui.cloud.simplify()
 ui.tempColorDisplay.position.y += 10
 
 // modified from Paperjs.org examples
-// called to show the color wheel
 function showColorUi() {
 
 	colorWheelLayer.activate()
@@ -316,24 +327,25 @@ function showColorUi() {
 // Group all the UI stuff together
 var uiGroup = new Group({
 	children: [ui.line, ui.brush, ui.circle, ui.rect, ui.arc, ui.cloud,
-		 				 ui.text, ui.transform, ui.color, ui.download]
-	//adjust group position based on artboards position
+		 				 ui.text, ui.transform, ui.color, ui.random, ui.download]
 })
 
-//position ui relative to the artboard
+//position UI relative to the artboard
+//TODO make responsive to resize
 uiGroup.position.y = artBoard.position.y
-uiGroup.scale(.8)
+uiGroup.position.x = artBoard.position.x - 500
+uiGroup.scale(.82)
 
-// helper function to check/clip if a drawn object is inside the bounds of an artBoard
 // TODO: figure out layer index issue
-function checkIfBoardContains(object) {
+// check/clip if a drawn object is outside the bounds of an artBoard
+function checkIfBoardContains(object, index) {
 	if (!artBoard.bounds.contains(object.bounds)) {
 		var clipper = new Path.Rectangle(artBoard.bounds)
 		var clippedGroup = new Group(clipper, object)
 		clippedGroup.clipped = true
-	}
+		baseLayer.insertChild(index, clippedGroup)
+		}
 }
-
 
 //all the drawing and editing tools
 window.draw = {
@@ -363,15 +375,19 @@ window.draw = {
 			},
 
 			onMouseDrag: function(event) {
-				var step = event.delta / 2
-				step.angle += 90
+				if(artBoard.bounds.contains(event.point)) {
+					var step = event.delta / 2
+					step.angle += 90
 
-				var top = event.middlePoint + step
-				var bottom = event.middlePoint - step
+					var top = event.middlePoint + step
+					var bottom = event.middlePoint - step
 
-				path.add(top)
-				path.insert(0, bottom)
-				path.smooth()
+					path.add(top)
+					path.insert(0, bottom)
+					path.smooth()
+
+					checkIfBoardContains(path)
+				}
 			},
 
 			onMouseUp: function(event) {
@@ -407,9 +423,10 @@ window.draw = {
 							var rect = new Path.Rectangle(circle.bounds)
 							rect.fillColor = currentColor
 							rect.strokeColor = 'black'
+							rect.name = 'rect' + rect.id
 							rect.removeOnDrag()
 
-							checkIfBoardContains(rect)
+							checkIfBoardContains(rect, rect.index)
 
 							circle.remove()
 					}
@@ -470,8 +487,9 @@ window.draw = {
 
 				if (hitResult && hitResult.item !== artBoard) {
 						path = hitResult.item
+						index = path.index
 				}
-				// movePath = hitResult.type == 'fill';
+
 			},
 			onMouseMove: function(event) {
 				project.activeLayer.selected = false
@@ -480,7 +498,11 @@ window.draw = {
 						event.item.layer.name !== 'colorWheelLayer' &&
 						artBoard.bounds.contains(event.point) ) {
 
-						event.item.selected = true
+						if(event.item.children) {
+							event.item.children[1].selected = true
+						} else {
+							event.item.selected = true
+						}
 
 					}
 			},
@@ -492,7 +514,7 @@ window.draw = {
 
 						path.position += event.delta
 
-						checkIfBoardContains(path)
+						checkIfBoardContains(path, index)
 				}
 			},
 			onKeyDown: function(event) {
@@ -501,6 +523,12 @@ window.draw = {
 					checkIfBoardContains(path)
 				} else if ( event.key === 'down') {
 					path.scale(0.9)
+					checkIfBoardContains(path)
+				} else if ( event.key === 'left') {
+					path.rotate(-10)
+					checkIfBoardContains(path)
+				} else if ( event.key === 'right') {
+					path.rotate(10)
 					checkIfBoardContains(path)
 				} else if ( event.key === 'space') {
 					path.remove()
@@ -600,42 +628,67 @@ window.draw = {
 
 }//drawing tools
 
+function generateRandomDrawing() {
 
-//NOTES
-// function img() {
-//
-// 	var c = document.getElementById("draw");
-// 	var ctx = c.getContext("2d");
-// 	var img = new Image();
-// 	img.onload = function() {
-// 		ctx.drawImage(img, 0, 0);
-// 	};
-// 	img.src = 'https://cdn.sstatic.net/stackexchange/img/logos/so/so-icon.png';
-//
-// 	iimg = new Raster (img)
-//
-// 	iimg.position = view.center
-// }
+	var iteration = 100
 
+	function randomPt() {
+		var bounds = new Size(artBoard.bounds.width, artBoard.bounds.height)
+		var newPoint = new Point(bounds * Point.random()) + artBoard.bounds.topLeft
+		return newPoint
+	}
 
-//fit something to a rectangular bounds
-// path.fitBounds(artBoard.bounds)
+	function randomColor() {
+		return color = {
+				hue: Math.random() * 360,
+				saturation: 1,
+				brightness: 1
+		}
+	}
 
-// // display cordinates of an elemet
-// function displayPoints(path) {
+	function randomNum(limit) {
+		return Math.floor(Math.random() * limit)
+	}
 
+	function drawLine() {
+		var from = randomPt()
+		var to = randomPt()
+		var color = randomColor()
+		var num = randomNum(10)
 
-// Loop 30 times:
-// for (var i = 0; i < 30; i++) {
-//     // Create a circle shaped path at a random position
-//     // in the view:
-//     var path = new Path.Circle({
-//         center: Point.random() * view.size,
-//         radius: 25,
-//         fillColor: 'black',
-//         strokeColor: 'white'
-//     });
+		var path = Path.Line({
+			from: from,
+			to: to,
+			strokeWidth: num,
+			strokeColor: color,
+		})
 
+		checkIfBoardContains(path)
+	}
+
+	function drawCircle() {
+		var center = randomPt()
+		var color = randomColor()
+		var radius = randomNum(35)
+
+		var path = Path.Circle({
+			center: center,
+			radius: radius,
+			fillColor: color,
+		})
+
+		checkIfBoardContains(path)
+	}
+
+	var draw = [drawLine,drawCircle]
+
+	for(var i=0; i< iteration ; i++) {
+		var index = randomNum(draw.length)
+		draw[index]()
+		// i%2 == 0 ? drawLine() : drawCircle()
+	}
+
+}
 
 </script> <!-- paperscript -->
 </body>
