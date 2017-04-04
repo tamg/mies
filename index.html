@@ -43,7 +43,7 @@ var artBoard = new Path.Rectangle({
 	strokeWidth: .5,
 	fillColor: 'ghostwhite',
 	name: 'artboard',
-	shadowColor: '#cbcbcb',
+	shadowColor: 'rgb(134, 149, 147)',
 	shadowBlur: 30,
 	shadowOffset: new Point(10, 10),
 })
@@ -209,10 +209,6 @@ var ui = {
 
 	download: new CompoundPath({
     children: [
-        new Path.Circle({
-            center: new Point(80, 730),
-            radius: 30,
-        }),
 				new Path.Line({
             segments: [[65,740], [65,747], [95,747], [95,740]],
         }),
@@ -222,10 +218,14 @@ var ui = {
 				new Path.Line({
 						segments: [[80,710], [80,745]],
 				}),
+				new Path.Circle({
+						center: new Point(80, 730),
+						radius: 30,
+						fillColor: 'white',
+				}),
     ],
 		strokeColor: 'red',
-		strokeWidth: 3,
-		fillColor: 'white',
+		strokeWidth: 5,
 		onClick: function(event) {
 				artBoard.visible = false
 				var svgData = paper.project.exportSVG({ asString: true, bounds: artBoard })
@@ -578,7 +578,7 @@ window.draw = {
 							newText.content += ' '
 							cursor.position.x = newText.bounds.bottomRight.x + 5
 							checkIfBoardContains(newText)
-					} else if ( 'abcdefghijklmonpqrstuvwxyz0123456789-[]:?/,~!@#$%^&*()_+-'.indexOf(event.key) > 0) {
+					} else if ( 'abcdefghijklmonpqrstuvwxyz0123456789-[]:?/,~!@#$%^&*()_+-'.indexOf(event.key) > -1) {
 							newText.content += event.key
 							cursor.position.x = newText.bounds.bottomRight.x + 5
 							checkIfBoardContains(newText)
