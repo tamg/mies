@@ -17,6 +17,10 @@ var colorWheelLayer = new Layer({
 	name: 'colorWheelLayer'
 })
 
+var drawingLayer = new Layer({
+	name: 'drawingLayer'
+})
+
 //activate baseLayer
 baseLayer.activate()
 
@@ -189,10 +193,10 @@ var ui = {
 	    radius2: 35,
 	    fillColor: 'red',
 			onClick: function(event) {
-				currentTool = 'random'
 				generateRandomDrawing()
+				currentTool = 'transform'
 				draw.transform.activate()
-				ui.info.content = 'Randomly Generated Masterpiece'
+				ui.info.content = 'Mouse Drag = Move  Up/Down = Scale  Left/Right = Rotate  Space = Delete'
 			}
 	}),
 
@@ -242,9 +246,9 @@ var ui = {
 
 	keyboard: new PointText({
 		position: artBoard.bounds.bottomLeft + [0, 45],
-		fillColor: 'black',
+		fillColor: 'red',
 		fontSize: 16,
-		content: 'keyboard shortcuts: l:line  b:brush  c:circle  r:rectangle  a:arc  d:cloud  t:text  m:transform  x:color',
+		content: 'keyboard shortcuts: l:line  b:brush  c:circle  r:rectangle  a:arc  d:cloud  t:text  m:transform  x:color  z:magic!  q:start over drawing',
 		onClick: function(event) {
 			window.open('https://github.com/tamg/mies','_blank')
 		}
@@ -270,6 +274,7 @@ ui.tempColorDisplay.position.y += 10
 function showColorUi() {
 
 	colorWheelLayer.activate()
+	colorWheelLayer.bringToFront()
 	var steps = {
 			hue: 36,
 			saturation: 5,
@@ -342,7 +347,7 @@ function checkIfBoardContains(object, index) {
 		var clipper = new Path.Rectangle(artBoard.bounds)
 		var clippedGroup = new Group(clipper, object)
 		clippedGroup.clipped = true
-		baseLayer.insertChild(index, clippedGroup)
+		drawingLayer.insertChild(index, clippedGroup)
 		}
 }
 
@@ -653,6 +658,11 @@ for(var key in draw) {
 					draw.color.activate()
 					project.layers.colorWheelLayer.visible = true
 					ui.info.content = 'Click to pick a color.   Space Bar to Exit'
+			} else if ( event.key === 'z') {
+				generateRandomDrawing()
+				currentTool = 'transform'
+				draw.transform.activate()
+				ui.info.content = 'Mouse Drag = Move  Up/Down = Scale  Left/Right = Rotate  Space = Delete'
 			} else if(event.key === 'up') {
 					path.scale(1.2)
 					checkIfBoardContains(path)
@@ -667,6 +677,8 @@ for(var key in draw) {
 					checkIfBoardContains(path)
 			} else if ( event.key === 'space') {
 					path.remove()
+			} else if ( event.key === 'q') {
+					drawingLayer.removeChildren()
 			}
 		}
 	}
@@ -734,3 +746,6 @@ function generateRandomDrawing() {
 	}
 
 }
+
+//activate drawing layer after rendering all ui stuff
+drawingLayer.activate()
