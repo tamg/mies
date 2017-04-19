@@ -25,7 +25,7 @@ var drawingLayer = new Layer({
 baseLayer.activate()
 
 //draw our artboard based on browser window size (view)
-var artBoardSize = new Size (900, 600)
+var artBoardSize = new Size (850, 500)
 var artBoardTopX = Math.max(180,(view.center.x - artBoardSize.width/2))
 var artBoardPoint = new Point (artBoardTopX, view.center.y - artBoardSize.height/2)
 
@@ -246,9 +246,9 @@ var ui = {
 
 	keyboard: new PointText({
 		position: artBoard.bounds.bottomLeft + [0, 45],
-		fillColor: 'red',
+		fillColor: 'black',
 		fontSize: 16,
-		content: 'keyboard shortcuts: l:line  b:brush  c:circle  r:rectangle  a:arc  d:cloud  t:text  m:transform  x:color  z:magic!  q:start over drawing',
+		content: 'shortcuts: l:line  b:brush  c:circle  r:rectangle  a:arc  d:cloud  t:text  m:transform  x:color  z:magic!  q:start over drawing',
 		onClick: function(event) {
 			window.open('https://github.com/tamg/mies','_blank')
 		}
