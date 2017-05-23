@@ -335,7 +335,6 @@ uiGroup.position.y = artBoard.position.y
 uiGroup.position.x = artBoard.position.x - 500
 uiGroup.scale(.82)
 
-// TODO: figure out layer index issue
 // check/clip if a drawn object is outside the bounds of an artBoard
 function checkIfBoardContains(object, index) {
 	if (!artBoard.bounds.contains(object.bounds)) {
@@ -598,12 +597,6 @@ window.draw = {
 					ui.tempColorDisplay.strokeColor = tempColor
 			},
 			onKeyDown: function(event) {
-			if(event.key === 'space')
-				//activate the tool that was active before picking color
-				currentTool = previousTool
-				draw[currentTool].activate()
-
-				project.layers.colorWheelLayer.visible = false
 			}
 		})
 
@@ -666,7 +659,14 @@ for(var key in draw) {
 					path.rotate(10)
 					checkIfBoardContains(path)
 			} else if ( event.key === 'space') {
-					path.remove()
+					if(project.layers.colorWheelLayer.visible) {
+						currentTool = previousTool
+						draw[currentTool].activate()
+						ui.info.content = previousUiInfo
+						project.layers.colorWheelLayer.visible = false
+					} else {
+						path.remove()
+					}
 			}
 		}
 	}
